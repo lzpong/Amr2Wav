@@ -19,7 +19,11 @@
  *	Purpose 		:	Decode AMR to wave 
  *	Entry			:	AmrName -- char* , The input Amr file file name 
  *						WavName -- char* , The output wave sample file name ( no head )
- *	Return			:	static void
+ *	Return			:	0: OK
+ *						1: open amr file error 
+ *						2: memory not enough
+ *						3: open wav file error
+ *						4: decodec init error
  *	External Ref.	:	
  *	Summary			:	
  *	Flowchart		:	
@@ -27,36 +31,44 @@
  *****************************************************************************/
 int decodeOneAmrFile( char* AmrName , char* WavNAme )
 {
-	typedef void Speech_Decode_FrameState ; 
-
-	AMRStruct*	AmrStruct = 0 ;  	
+	typedef void Speech_Decode_FrameState ;
+	int ret = 0;
+	AMRStruct*	AmrStruct = 0 ;
 	WAVStruct*	WavStruct = 0 ;
 	Speech_Decode_FrameState *speech_decoder_state = NULL;
 
-	Word16* synth0[6] = {0};        // L_FRAME    /* Synthesis                     */
-	Word16* synthBuffer = 0  ;
+	Word16* synth0[6] = {0};        // L_FRAME    Synthesis
+	Word16* synthBuffer = 0;
 	Word16* synth ;
 	Word32 frame;
 
-	Word16	n ;
+	Word16 n ;
     Word32 frametype = 0;
     Word32 size = 0;
 	
-	AmrStruct = OpenAmrFile( AmrName , 0 , 0 , 0 )  ;  	
-	if( !AmrStruct )
+	AmrStruct = OpenAmrFile( AmrName , 0 , 0 , 0 );
+	if( !AmrStruct ) {
+		ret = 1 ;//open amr file
 		goto error ;
+	}
 	size = AmrStruct->nChannels * (int)L_FRAME * sizeof( Word16 );
 	synthBuffer = (Word16* ) malloc(size) ;
-	if( !synthBuffer )
+	if( !synthBuffer ) {
+		ret = 2 ; //mem
 		goto error ;
+	}
 	for( n = 0 ;  n < AmrStruct->nChannels ; n ++ )	
 		synth0[ n ] = synthBuffer + n*L_FRAME ;	
 	WavStruct = CreateWaveFile( WavNAme, AmrStruct->nChannels , 16 , AmrStruct->SampleRate ) ;
-	if( !WavStruct )
+	if( !WavStruct ) {
+		ret = 3 ;//open wav file
 		goto error ;
-	speech_decoder_state = (Speech_Decode_FrameState *)AMRCODEC_init(MR515) ;//Decoder_Interface_init() ;
-	if (!speech_decoder_state)
+	}
+	speech_decoder_state = (Speech_Decode_FrameState *)AMRCODEC_init(MR515) ;//Decoder_Interface_init();
+	if (!speech_decoder_state) {
+		ret = 4 ;//decodec init error
 		goto error ;
+	}
 	  
 
 	/*-----------------------------------------------------------------------*
@@ -77,14 +89,6 @@ int decodeOneAmrFile( char* AmrName , char* WavNAme )
 	* Close down speech decoder                                             *
 	*-----------------------------------------------------------------------*/
 //	Speech_Decode_Frame_exit(&speech_decoder_state);
-	AMRCODEC_end(speech_decoder_state);
-	CloseWaveFile( WavStruct );
-	CloseAmrFile( AmrStruct ); 
-	if(synthBuffer)
-		free(synthBuffer);
-
-	return 1;
-
 error:
 	if( WavStruct )
 		CloseWaveFile( WavStruct );
@@ -94,6 +98,6 @@ error:
 		free(synthBuffer );
 	if(speech_decoder_state )
 		AMRCODEC_end(speech_decoder_state);
-	return 0 ;
+	return ret ;
 }
 
