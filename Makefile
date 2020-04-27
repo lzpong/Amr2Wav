@@ -187,6 +187,7 @@ OBJS = $(CSRCS:.c=.o) $(CPPSRCS:.cpp=.o)
 
 all:	 $(TESTOBJ) $(TARGET)
 $(TARGET):$(OBJS)
+	-mkdir $(LIBDIR)
 	$(AR) $(STATICLIB) $(OBJS)
 	$(CXX) -o $(TARGET)  $(OBJS) $(TESTOBJ)
 
