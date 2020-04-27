@@ -12,7 +12,7 @@ STATICLIB = $(LIBDIR)/libamr2wav.a
 
 LIBS = -L$(LIBDIR)/ -lamr2wav
 
-TARGET = $(BASE_PATH)/test/AmrTest.exe
+TARGET = $(BASE_PATH)/test/amr2wav
 
 TCSRCS = $(BASE_PATH)/test/AmrApp.c
 
